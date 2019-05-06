@@ -1,0 +1,12 @@
+AEMET/Test.class
+AEMET/API/APIUtils$1.class
+AEMET/API/Estacion.class
+AEMET/API/ObservacionEstacion.class
+AEMET/API/APIUtils.class
+AEMET/model/EstacionCRUD.class
+AEMET/model/IntegracionDatos.class
+AEMET/model/ProvinciaCRUD.class
+AEMET/Main.class
+AEMET/API/APIUtils$3.class
+AEMET/model/HibernateUtil.class
+AEMET/API/APIUtils$2.class

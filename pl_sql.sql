@@ -1,0 +1,445 @@
+CREATE TABLE PRODUCTE(
+	ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    NOM VARCHAR(32) NOT NULL,
+    PREU DECIMAL(8,2) NOT NULL
+);
+
+
+DELIMITER $$
+CREATE TRIGGER preu_positiu BEFORE INSERT ON PRODUCTE 
+FOR EACH ROW
+BEGIN
+	#TRIGGER BODY
+    /* Variables ya definidas a un trigger:
+		1. new: contiene una nueva row.
+			INSERT (NOM, PREU)
+            NEW.NOM = VALOR DEL INSERT PARA NOM.
+            NEW.PREU = VALOR DEL INSERT PARA PREU
+            Eventos? insert, update.
+            
+        2. old: contiene una row antihua.
+			Eventos? update, delete.
+    */
+    DECLARE v_variable VARCHAR(32) DEFAULT 'defecte';
+    DECLARE v_contador INT DEFAULT 0;
+    
+    SET v_variable = 'valorNou';
+	SET v_contador = v_contador + 1;
+    
+    IF NEW.PREU < 0 THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Preu negatiu';
+    END IF;
+
+
+    
+END;
+$$
+DELIMITER ;
+
+DROP TRIGGER preu_positiu;
+
+INSERT INTO PRODUCTE(NOM, PREU) VALUES ('PRECIO NEGATIVO', -1);
+
+
+
+#EJERCICIO
+
+/*
+	EMPLEAT (ID_EMPLEAT, SOU)
+    HISTORIC_SOU_EMPLEAT(ID_EMPLEAT, SOU, DATA)
+    
+    TRIGGER PER MOURE SOU EMPLAT A HISTORIC CADA VEGADA QUE ES MODIFICA EL SOU.
+    NO PERMITIR SOU NEGATIU
+*/
+
+CREATE TABLE EMPLEAT(
+	ID_EMPLEAT INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    SOU	INT NOT NULL
+);
+
+DROP TABLE HISTORIC_EMPLEAT;
+
+CREATE TABLE HISTORIC_EMPLEAT(
+	ID INT AUTO_INCREMENT,
+    ID_EMPLEAT INT,
+    SOU INT NOT NULL,
+    DATA DATE NOT NULL,
+    
+    PRIMARY KEY(ID, DATA),
+    
+    FOREIGN KEY (ID_EMPLEAT) REFERENCES EMPLEAT(ID_EMPLEAT) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+DELIMITER $$
+CREATE TRIGGER HISTORIC_SOU BEFORE UPDATE ON EMPLEAT FOR EACH ROW
+BEGIN
+	
+    IF NEW.SOU < 0 THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'SOU NEGATIU';
+	ELSE
+		
+        INSERT INTO HISTORIC_EMPLEAT (ID_EMPLEAT, SOU, DATA) VALUES (NEW.ID_EMPLEAT, OLD.SOU, NOW());
+        
+	END IF;
+    
+END;
+$$
+DELIMITER ;
+
+
+INSERT INTO EMPLEAT(SOU) VALUES(10000);
+INSERT INTO EMPLEAT(ID_EMPLEAT, SOU) VALUES(1000 ,10000);
+
+
+UPDATE `prova`.`EMPLEAT`
+SET
+`SOU` = -656565656
+WHERE `ID_EMPLEAT` = 1;
+
+SELECT * FROM HISTORIC_EMPLEAT;
+
+
+
+/********************************************************************************************************************************************/
+/*
+compte bancari i moviment bancaris
+2 tipus: Ingresar doblers (Deposit 'D')
+		Treu doblers (Withdrawal 'W')
+        
+        QUAN REALITZE UN MOVIMENT, ACTUALIZE EL SALDO Y NO PERMETRE QUE TREGUI MÉS QUE EL QUE TÉ.
+*/
+
+CREATE TABLE COMPTE(
+	IBAN VARCHAR(24) PRIMARY KEY,
+    SALDO DECIMAL(10,2) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE MOVIMENT(
+	IDMOVIMENT INT AUTO_INCREMENT,
+    TIPUS ENUM('D', 'W') NOT NULL,
+    COMPTE VARCHAR(24) NOT NULL,
+    DATA DATETIME NOT NULL DEFAULT NOW(),
+    QUANTITAT DECIMAL(10,2) NOT NULL,
+    
+    PRIMARY KEY(IDMOVIMENT, COMPTE),
+    
+    FOREIGN KEY(COMPTE) REFERENCES COMPTE(IBAN) ON UPDATE CASCADE,
+    
+    CHECK(QUANTITAT > 0)
+);
+
+
+DELIMITER $$
+CREATE TRIGGER WHITHDRAWL_COMPROBATION BEFORE INSERT ON MOVIMENT FOR EACH ROW
+BEGIN
+
+	DECLARE V_SALDO DECIMAL(10,2);
+
+	SELECT SALDO INTO V_SALDO FROM COMPTE WHERE IBAN = NEW.COMPTE;
+    
+	IF NEW.TIPUS = 'W' AND V_SALDO <= NEW.QUANTITAT THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'SALDO INSUFICIENTE';
+	END IF;
+END;
+$$
+
+
+CREATE TRIGGER ACTUALIZAR_SALDO AFTER INSERT ON MOVIMENT FOR EACH ROW
+BEGIN
+
+	DECLARE V_SALDO DECIMAL(10,2);
+    
+    SELECT SALDO INTO V_SALDO FROM COMPTE WHERE IBAN = NEW.COMPTE;
+    
+    IF NEW.TIPUS = 'W' THEN
+        UPDATE COMPTE SET SALDO = V_SALDO - NEW.QUANTITAT WHERE IBAN = NEW.COMPTE;
+	ELSE
+        UPDATE COMPTE SET SALDO = V_SALDO + NEW.QUANTITAT WHERE IBAN = NEW.COMPTE;
+	END IF;
+
+END;
+$$
+DELIMITER ;
+
+DROP TRIGGER ACTUALIZAR_SALDO;
+
+SELECT * FROM MOVIMENT;
+
+
+INSERT INTO COMPTE() VALUES('A', 100);
+INSERT INTO MOVIMENT(TIPUS, COMPTE, QUANTITAT) VALUES('W', 'A', 50);
+INSERT INTO MOVIMENT(TIPUS, COMPTE, QUANTITAT) VALUES('D', 'A', 1000);
+
+
+/*************************************************************************************************************************************************************/
+/***************************************************************|FUCTIONS - PROCEDURES (void)|***********************************************************************/
+/*************************************************************************************************************************************************************/
+
+
+DELIMITER $$
+CREATE PROCEDURE P_DUPLICAR(IN VALOR INT, OUT RESULTAT INT)
+BEGIN
+	SET RESULTAT = VALOR * 2;
+END
+$$
+DELIMITER ;
+
+CALL P_DUPLICAR(3, @RESULTAT);
+SELECT @RESULTAT;
+
+
+DELIMITER $$
+CREATE PROCEDURE P_HOLA(IN NOM VARCHAR(32))
+BEGIN
+    SELECT CONCAT('Hola, ', NOM) AS HOLA;
+END
+$$
+DELIMITER ;
+
+CALL P_HOLA('Gustavo');
+
+
+/**********************************************************************|BUCLES|********************************************************************************/
+
+DELIMITER $$
+CREATE PROCEDURE BUCLE()
+BEGIN
+	
+    DECLARE V_CONTADOR INT DEFAULT 0;
+    
+    L_LOOP : LOOP
+    
+		SELECT V_CONTADOR;
+        
+        IF V_CONTADOR >= 10 THEN
+			LEAVE L_LOOP;
+		END IF;
+        
+        SET V_CONTADOR = V_CONTADOR + 1;
+    
+    END LOOP L_LOOP;
+    
+END;
+$$
+DELIMITER ;
+DROP PROCEDURE BUCLE;
+CALL BUCLE();
+
+INSERT INTO PRODUCTE(NOM, PREU) VALUES
+('A', 10.5),
+('B', 50),
+('C', 99.95);
+
+SELECT PREU FROM PRODUCTE;
+
+DELIMITER $$
+CREATE PROCEDURE P_PREU_PRODUCTE()
+BEGIN
+
+	/*VARIABLES*/
+    DECLARE V_SUMA DECIMAL(10,2) DEFAULT 0;
+    DECLARE V_FI INT(1) DEFAULT 0;
+    DECLARE V_PREU DECIMAL(8,2);
+    
+    /*CURSORES*/
+    DECLARE C_PREUS CURSOR FOR 
+		SELECT PREU FROM PRODUCTE;
+        
+    /*HANDLERS*/ 
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET V_FI = 1;
+    
+    /*INSTRUCCIONES*/
+    OPEN C_PREUS;
+    L_PREUS : LOOP
+		FETCH C_PREUS INTO V_PREU;
+        
+        IF V_FI = 1 THEN
+			LEAVE L_PREUS;
+		END IF;
+        
+		SET V_SUMA = V_SUMA + V_PREU;
+
+	END LOOP L_PREUS;
+	CLOSE C_PREUS;
+    
+    SELECT V_SUMA;
+END;
+$$
+DELIMITER ;
+
+CALL P_PREU_PRODUCTE();
+
+
+/***************************************************************|Ejercicios|***********************************************************************************************************/
+
+/*
+	Crea una taula amb numeros.
+    Crea un procediment que recorri la taula i mostra al final una frase dient:
+		- S'han contat x numeros. El major val y el menor val
+*/
+
+CREATE TABLE NUM(
+	NUM INT
+);
+
+INSERT INTO NUM VALUES
+(-1),(-2),(-50),(-100),(-1545),(-10);
+SELECT * FROM NUM;
+
+
+DELIMITER $$
+CREATE PROCEDURE P_COMPTA_NOMBRES ()
+BEGIN
+
+	DECLARE V_NUM INT;
+	DECLARE V_MAX INT;
+    DECLARE V_MIN INT;
+    DECLARE V_COUNT INT DEFAULT 0;
+    DECLARE V_END INT(1);
+    
+    DECLARE C_NUMS CURSOR FOR SELECT NUM FROM NUM;
+    
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET V_END = 1;
+
+	OPEN C_NUMS;
+    
+    L_NUMS : LOOP
+		FETCH C_NUMS INTO V_NUM;
+        
+        IF V_END = 1 THEN
+			LEAVE L_NUMS;        
+        END IF;
+        
+        
+        IF V_COUNT = 0 THEN
+			SET V_MAX = V_NUM;
+            SET V_MIN = V_NUM;
+		ELSE
+			IF V_NUM > V_MAX THEN
+				SET V_MAX = V_NUM;
+			END IF;
+            IF V_NUM < V_MIN THEN
+				SET V_MIN = V_NUM;
+			END IF;
+        END IF;
+        
+        SET V_COUNT = V_COUNT + 1;
+    
+    END LOOP L_NUMS;
+
+	CLOSE C_NUMS;
+	
+	SELECT CONCAT("S'han contat ", V_COUNT," nombres. El major es ", V_MAX," i el menor es ", V_MIN) RESULTADO;
+
+END;
+$$
+DELIMITER ;
+
+DROP PROCEDURE P_COMPTA_NOMBRES;
+
+SELECT * FROM NUM;
+
+CALL P_COMPTA_NOMBRES();
+
+/*
+	Modifica la taula de GENRE per a que tengui un comptador d'exemplars.
+    Crea un procediment que, per cada genre, assigni el seu nombre d'exemplars a la nova columna.
+*/
+
+
+SELECT * FROM GENRES;
+
+ALTER TABLE GENRES
+ADD COLUMN NUM_EXEMPLARS INT;
+
+SELECT 
+	GENRES.GENRE_CODE, COUNT(BOOKS.BOOK_CODE) NUM_EXEMPLARS 
+FROM 
+	GENRES LEFT JOIN GENREBOOK ON GENRES.GENRE_CODE = GENREBOOK.GENRE_CODE
+    LEFT JOIN BOOKS ON GENREBOOK.BOOK_CODE = BOOKS.BOOK_CODE
+GROUP BY GENRES.GENRE_CODE;
+
+
+DROP VIEW V_LLIBRE_GENRE;
+
+SELECT
+	*
+FROM
+	V_LLIBRE_GENRE;
+
+
+DELIMITER $$
+CREATE PROCEDURE P_COUNT_EXEMPLARS_GENRE()
+BEGIN
+	
+    DECLARE V_NUM_EXEMPLARS INT;
+    DECLARE V_GENRE CHAR(4);
+    DECLARE V_END INT(1) DEFAULT 0;
+    
+    DECLARE C_GENRE CURSOR FOR SELECT * FROM V_LLIBRE_GENRE;
+
+	DECLARE CONTINUE HANDLER FOR NOT FOUND SET V_END = 1;
+	
+	OPEN C_GENRE;
+    
+    L_GENRE : LOOP
+		FETCH C_GENRE INTO V_GENRE, V_NUM_EXEMPLARS;
+        
+        IF V_END = 1 THEN
+			LEAVE L_GENRE;
+		END IF;
+        
+    UPDATE GENRES SET NUM_EXEMPLARS = V_NUM_EXEMPLARS WHERE GENRE_CODE = V_GENRE;
+    
+    END LOOP L_GENRE;
+
+	CLOSE C_GENRE;
+
+END;
+$$
+DELIMITER ;
+
+DROP PROCEDURE P_COUNT_EXEMPLARS_GENRE;
+
+
+CALL P_COUNT_EXEMPLARS_GENRE();
+
+SELECT * FROM GENRES;
+
+
+
+
+
+/***********************************************************|FUNCTIONS|***********************************************************************/
+
+DELIMITER $$
+CREATE FUNCTION F_DOBLAR (VALOR INT) RETURNS INT
+BEGIN
+	RETURN VALOR * 2;
+END;
+$$
+DELIMITER ;
+
+SELECT F_DOBLAR(4);
+
+DELIMITER $$
+CREATE FUNCTION F_FAHRENHEIT (CELSIUS DECIMAL(8,2)) RETURNS DECIMAL(8,2)
+BEGIN
+	RETURN (CELSIUS * 9 / 5) + 32;
+END;
+$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE FUNCTION F_CELSIUS (FAHRENHEIT DECIMAL(8,2)) RETURNS DECIMAL(8,2)
+BEGIN
+	RETURN (FAHRENHEIT - 32) * 5/9;
+END;
+$$
+DELIMITER ;
+
+DROP FUNCTION F_FAHRENHEIT;
+DROP FUNCTION F_CELSIUS;
+
+SELECT F_FAHRENHEIT(21);
+SELECT F_CELSIUS(71);

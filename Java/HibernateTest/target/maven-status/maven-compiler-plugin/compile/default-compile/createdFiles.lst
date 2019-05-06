@@ -1,0 +1,13 @@
+com/mycompany/hibernatetest/Model/MovieCRUD.class
+com/mycompany/hibernatetest/Model/entities/Llibre.class
+com/mycompany/hibernatetest/Model/entities/Actor.class
+com/mycompany/hibernatetest/Model/entities/Movie_.class
+com/mycompany/hibernatetest/Model/entities/Autor_.class
+com/mycompany/hibernatetest/Model/ActorCRUD.class
+com/mycompany/hibernatetest/Model/entities/Autor.class
+Main.class
+com/mycompany/hibernatetest/Model/entities/Llibre_.class
+com/mycompany/hibernatetest/Model/entities/Movie.class
+TestMovie.class
+com/mycompany/hibernatetest/Model/entities/Actor_.class
+com/mycompany/hibernatetest/Model/HibernateUtil.class

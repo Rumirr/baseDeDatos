@@ -1,0 +1,8 @@
+net/iessonferrer/crimes/model/Control.class
+net/iessonferrer/crimes/Main.class
+net/iessonferrer/crimes/model/entities/Case.class
+net/iessonferrer/crimes/model/entities/Location.class
+net/iessonferrer/crimes/model/entities/CrimeType.class
+com/mycompany/hibernatetest/HibernateUtil.class
+net/iessonferrer/crimes/API/CrimeData.class
+net/iessonferrer/crimes/API/CrimeRecord.class

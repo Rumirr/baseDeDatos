@@ -1,0 +1,37 @@
+
+**********************************************************************************************
+/ 	CONFIGURAR SERVIDOR UBUNTU PARA QUE PUEDAS ACCEDER A MYSQL REMOTAMENTE		     /
+**********************************************************************************************
+
+
+configuracion de la maquina virtual
+- Adaptador puente
+
+*******************************************************************************
+Pones ip_fija en el servidor
+
+
+apt-get update
+apt-get upgrade
+
+apt-get install mysql-server
+
+
+******************************************************************************
+nano /etc/mysql/my.cnf
+	//AÑADES
+	[mysqld]
+	bind-address = ip_server
+	port = 3306
+
+service mysql restart
+
+******************************************************************************
+mysql -u root -p
+
+	grant all on *.* to root@ip_ordenador identified by 'contraseña'; (repetir este comando con la ip del compañero si vas a compartir este servidor)
+	flush privileges;
+
+
+
+

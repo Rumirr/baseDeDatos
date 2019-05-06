@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <!-- Passes per configurar:
+            1. Afegir dependencies d'hibernate i driver MySQL a pom.xml de Maven
+            2. Moure fitxer hibernate.cfg.xml a /nomProjecte/src/main/resources
+            3. Substituir valors entre {}
+            4. Afegir mapping per cada classe a mapejar per Hibernate (recomanat package dedicat)    
+    -->
+    <session-factory>
+        <property name="hibernate.connection.driver_class">com.mysql.jdbc.Driver</property>
+        <property name="hibernate.connection.username">exam</property>
+        <property name="hibernate.connection.password">exam</property>
+        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/chicago</property>
+        <property name="hibernate.dialect">org.hibernate.dialect.MySQLInnoDBDialect</property>
+        <property name="show_sql">true</property> 
+        <property name="connection.pool_size">1</property><!--Incrementar en cas de aplicacio real-->
+         
+         
+         
+         <!--Mappings-->
+         
+        <mapping class="net.iessonferrer.crimes.model.entities.Case"></mapping>       
+        <mapping class="net.iessonferrer.crimes.model.entities.CrimeType"></mapping>       
+        <mapping class="net.iessonferrer.crimes.model.entities.Location"></mapping>       
+         
+        <!--Exemple: 
+            <mapping class="com.mycompany.hibernatetest.Entities.Author"></mapping>
+        -->
+ 
+        
+    </session-factory>
+</hibernate-configuration>
